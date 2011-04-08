@@ -1,0 +1,109 @@
+========================================================================
+Using Amazon EC2
+
+References (in order):
+http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/SettingUp_CommandLine.html
+http://www.cygwin.org/
+http://www.powercram.com/2009/12/installing-ec2-command-line-tools-on.html
+http://paulstamatiou.com/how-to-getting-started-with-amazon-ec2
+https://help.ubuntu.com/community/EC2StartersGuide
+========================================================================
+
+---------------
+Basic setup
+---------------
+-  Install latest version of Java JDK, set up system environment variable JAVA_HOME.
+-  Install latest version of cygwin, within it install rsync/openssh.
+-  Sign up for Amazon AWS.
+-  Create a new X509 certificate, download it anywhere (e.g. My Documents).
+-  Download the latest version of all command-line tools using powercram link (AMI, API, ELB), set up environment variables with respect to cygwin syntax. (API Tools is the EC2_HOME folder)
+-  Put all BIN directories of tools into system PATH variable.
+-  Verify your setup is working by running:
+
+ec2-describe-regions
+
+-  Execute:
+
+ec2-add-keypair ai_keypair
+
+-  Copy the output, paste it a file "ai_keypair" in the same folder as your X509 certificate.
+-  Using the AWS console create a new Security Group that allows inbound port 22/80/443 traffic. (SSH, HTTP, HTTPS).  Call it "ai_securitygroup".
+
+---------------
+Launching an AMI
+---------------
+-  Go here: http://uec-images.ubuntu.com/releases/maverick/release/
+-  Let's choose a micro 64-bit AMI backed by an EBS in the EU.  e.g. "ami-e59ca991"
+-  Launch a new Cygwin bash shell.
+-  Change directory to the location of you X509 certificate and keypair.
+-  Execute:
+
+ec2-run-instances ami-e59ca991 -k ai_keypair -t t1.micro -g ai_securitygroup
+
+-  Instance is now coming up.
+-  Execute:
+
+ec2-describe-instances
+
+-  Should be there.  Using its hostname connect to it:
+
+ssh -i ai_keypair ubuntu@<hostname>
+
+-  And you're running a node!  Congrats.
+
+---------------
+Core setup
+---------------
+
+# ----------------------------------------------------------------------
+# Install useful tidbits.
+# ----------------------------------------------------------------------
+sudo apt-get update
+yes yes | sudo apt-get upgrade
+yes yes | sudo apt-get install git mercurial build-essential zlib1g-dev libreadline5-dev uuid-dev openssl libssl-dev 
+mkdir ~downloads && cd ~downloads
+wget http://www.python.org/ftp/python/2.7.1/Python-2.7.1.tgz
+tar xvf Python-2.7.1.tgz
+cd Python-2.7.1
+./configure --prefix=/usr/local/
+make
+sudo make install
+
+# ----------------------------------------------------------------------
+# Install Erlang.
+# http://wiki.basho.com/Installing-Erlang.html
+# ----------------------------------------------------------------------
+yse yes | sudo apt-get install curl m4 flex xsltproc fop libncurses5-dev unixodbc-dev
+cd ~downloads
+wget http://www.erlang.org/download/otp_src_R14B02.tar.gz
+tar xvf otp_src_R14B02.tar.gz
+cd otp_src_R14B02
+make
+sudo make install
+
+# ----------------------------------------------------------------------
+#   How to bundle.
+#
+#   References:
+#   http://alestic.com/2009/06/ec2-ami-bundle
+# ----------------------------------------------------------------------
+-  Copy your keys onto the /mnt/ directory.  In cygwin execute: 
+
+rsync --rsh="ssh -i ai_keypair" --rsync-path="sudo rsync" ./{cert,pk}-*.pem $remoteuser@$remotehost:/mnt/
+export bucket=ai_bucket
+export prefix=ubuntu_maverick_amd64_20110407_server
+
+On the remote host execute:
+
+export AWS_USER_ID=<your value>
+export AWS_ACCESS_KEY_ID=<your value>
+export AWS_SECRET_ACCESS_KEY=<your value>
+
+if [ $(uname -m) = 'x86_64' ]; then
+  arch=x86_64
+else
+  arch=i386
+fi
+
+sudo -E ec2-bundle-vol -r $arch -d /mnt -p $prefix -u $AWS_USER_ID -k /mnt/pk-*.pem -c /mnt/cert-*.pem -s 10240 -e /mnt,/root/.ssh,/home/ubuntu/.ssh
+

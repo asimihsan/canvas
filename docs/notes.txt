@@ -1,0 +1,138 @@
+========================================================================
+Zero to hero - webmachine, riak
+========================================================================
+
+cd ~/Downloads/
+
+# ----------------------------------------------------------------------
+# Install Erlang.
+# http://wiki.basho.com/Installing-Erlang.html
+# ----------------------------------------------------------------------
+sudo apt-get update
+yse yes | sudo apt-get install build-essential curl m4 openssl libssl-dev flex xsltproc fop libncurses5-dev unixodbc-dev
+yes yes | sudo apt-get install git mercurial
+wget http://www.erlang.org/download/otp_src_R14B02.tar.gz
+tar xvf otp_src_R14B02.tar.gz
+cd otp_src_R14B02
+make
+sudo make install
+
+# ----------------------------------------------------------------------
+#   Install Riak.
+# ----------------------------------------------------------------------
+cd ~/Downloads/
+git clone git://github.com/basho/riak.git
+cd riak
+make all
+
+# ----------------------------------------------------------------------
+#   Test Riak.
+#   http://wiki.basho.com/Building-a-Development-Environment.html
+# ----------------------------------------------------------------------
+make devrel
+cd dev
+dev1/bin/riak start
+dev2/bin/riak start
+dev3/bin/riak start
+ps -eaf | egrep beam
+
+dev2/bin/riak-admin join dev1@127.0.0.1
+dev3/bin/riak-admin join dev3@127.0.0.1
+
+# ----------------------------------------------------------------------
+#   Install Webmachine
+# ----------------------------------------------------------------------
+cd ~/Downloads/
+git clone git://github.com/basho/webmachine.git
+cd webmachine
+make
+
+# ----------------------------------------------------------------------
+#   Make a machine project called "csd".
+# ----------------------------------------------------------------------
+scripts/new_webmachine.sh csd ../csd
+cd ../csd
+make
+./start.sh
+<browse to http://localhost:8000, works>
+q().
+
+# ----------------------------------------------------------------------
+#   Open rebar.config for editing, add riak and erlydtl, so the contents
+#   end up with latest head for webmachine, riakc, erlydtl.#
+# ----------------------------------------------------------------------
+
+#   (Following OJ's tutorial...)
+#  Make a ErlyDTL template, add it to csd_resource.erl :: to_html webmachine resource.
+#  Edit ebin/csd.app to add sample_dtl to the modules list, so rebar don't complain.
+#  make
+# ./start.sh
+
+# end of part 1
+
+# ----------------------------------------------------------------------
+#   Install HAProxy
+# ----------------------------------------------------------------------
+cd ~/Downloads/
+wget http://haproxy.1wt.eu/download/1.4/src/haproxy-1.4.14.tar.gz
+tar xvf haproxy-1.4.14.tar.gz
+cd haproxy-1.4.14
+
+# run make without arguments to get error and platform list.
+make TARGET=linux26
+sudo make install
+
+# set up HAProxy
+# it load-balances the front-end port 80 to the single webmachine on 8000
+# (ideally you would have more than one webmachine).
+# it load-balances the backend bound to 127.0.0.1:8080 to three riak instance
+# it does health checking, pretty cool.
+
+# and yes, you start haproxy as root.  see the front page, because
+# on startup it'll chroot() itself into a jail, which is only
+# possible as root.
+
+# ... much progress...
+
+# fascinating.  Failing to call the csd_code_svr gen_server because
+# its Pid doesn't exist.  Surely that means it hasn't been started?
+# Yes!  After adding the gen_server you need to tell the supervisor
+# to start it.
+
+# the webmachine+riak tutorial has no web interface for inserting
+# values, and on inserting from shell we get out an erlang binary.
+
+# ----------------------------------------------------------------------
+#   Install couchdb
+#   http://wiki.apache.org/couchdb/Installing_on_Ubuntu
+#   TODO build mozilla spidermonkey from source to avoid xulrunner
+#   dependencies, for mimimal setup.
+# ----------------------------------------------------------------------
+sudo apt-get install build-essential libicu-dev xulrunner-dev libcurl4-gnutls-dev openssl-dev libtool
+wget http://apache.mirrors.timporter.net//couchdb/1.0.2/apache-couchdb-1.0.2.tar.gz
+LDFLAGS="$(pkg-config mozilla-js --libs-only-L)" CFLAGS="$(pkg-config mozilla-js --cflags)" ./configure
+make
+sudo make install
+sudo vim /etc/passwd, change home directory of couchdb user to /usr/local/var/lib/couchdb/
+
+# change file ownership from root to couchdb user and adjust permissions
+sudo chown -R couchdb: /usr/local/var/{lib,log,run}/couchdb /usr/local/etc/couchdb
+sudo chmod 0770 /usr/local/var/{lib,log,run}/couchdb/
+sudo chmod 664 /usr/local/etc/couchdb/*.ini
+sudo chmod 775 /usr/local/etc/couchdb/*.d
+
+# fix up xulrunner
+sudo vim /etc/ld.so.conf.d/xulrunner.conf
+# add /usr/lib/xulrunner-x.x.x.x
+# add /usr/lib/xulrunner-devel-x.x.x.x
+# quit vim
+sudo /sbin/ldconfig
+
+# start couchdb
+cd /etc/init.d
+sudo ln -s /usr/local/etc/init.d/couchdb couchdb
+sudo /etc/init.d/couchdb start
+# Start couchdb on system start
+update-rc.d couchdb defaults
+
+# go to http://127.0.0.1:5984/_utils/, run tests
