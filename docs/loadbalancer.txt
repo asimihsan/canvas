@@ -1,0 +1,43 @@
+# ----------------------------------------------------------------------
+#   This describes how to initially set up and then relaunch
+#   a load balancer instance.
+# ----------------------------------------------------------------------
+
+-  Public AMI ID "ami-4fe7d03b" is our base EBS-backed AMI.
+-  We've set up system environment variables AWS_ACCSS_KEY_ID and AWS_SECRET_ACCESS_KEY on our local machine.
+
+from boto.ec2.connection import EC2Connection
+conn = EC2Connection()
+conn_eu = conn.get_all_regions()
+region_eu = [region for region in conn.get_all_regions() if "eu-west" in region.name][0]
+conn_eu = region_eu.connect()
+
+# create loadbalancer group, or use conn_eu.get_all_security_groups() if it already exists
+loadbalancer = conn_eu.create_security_group("loadbalancer", "Load Balancer Group")
+loadbalancer.authorize("tcp", 80, 80, "0.0.0.0/0")
+loadbalancer.authorize("tcp", 443, 443, "0.0.0.0/0")
+loadbalancer.authorize("ssh", 22, 22, "your.private.ip/32")
+image = conn_eu.get_image("ami-4fe7d03b")
+import json
+user_data_dict = {"key1": "value1", "key2": "value2"}
+user_data = json.dumps(user_data_dict)
+key_name = "ai_keypair"
+security_groups = [loadbalancer]
+reservation = image.run(key_name=key_name, security_groups=security_groups, user_data=user_data, instance_type="t1.micro")
+instance = reservation.instances[0]
+
+# update, get state, repeat
+instance.update(); instance.state
+
+# SSH on
+# add key information to ~/.aws_keys, dot it into ~/.bash_profile
+ls -l /etc/update-motd.d/, and fix the annoying messages
+
+
+# ----------------------------------------------------------------------
+#   Use Python "boto" module to start up the load balancer AMI.
+# ----------------------------------------------------------------------
+
+-  In order to hot reconfigure haproxy (the -sf flag means that
+we wait for existing connections to end.  Use -st to break them), execute: 
+haproxy -p /var/run/haproxy.pid -sf $(cat /var/run/haproxy.pid)
