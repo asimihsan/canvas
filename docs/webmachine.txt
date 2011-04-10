@@ -1,0 +1,29 @@
+# ----------------------------------------------------------------------
+#   Setting up the webmachine node.
+# ----------------------------------------------------------------------
+
+import os
+from boto.ec2.connection import EC2Connection
+conn = EC2Connection()
+region_eu = [region for region in conn.get_all_regions() if "eu-west" in region.name][0]
+conn_eu = region_eu.connect()
+my_ami = conn_eu.get_all_images(owners=[os.environ["AWS_ACCOUNT_ID"]])
+webmachine_ami = [ami for ami in my_ami if "Private base" in ami.description][0]
+port = "10000"
+import json
+import time
+user_data = {"port": port}
+reservation = webmachine_ami.run(key_name="ai_keypair",
+                                 user_data=json.dumps(user_data),
+                                 security_groups=conn_eu.get_all_security_groups("webmachine"),
+                                 instance_type="t1.micro")
+instance = reservation.instances[0]
+instance.add_tag("port", port)
+while True:
+    instance.update()
+    state = instance.state
+    if state == "running":
+        break
+    print "."
+    time.sleep(3)
+    

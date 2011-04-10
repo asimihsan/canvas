@@ -1,0 +1,318 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="DreamPie Format" content="1">
+<title>DreamPie History</title>
+<style>
+body {
+  white-space: pre-wrap;
+  font-family: Consolas;
+  font-size: 9216;
+  color: #ffffff;
+  background-color: #000000;
+}
+span.folded {
+ display: none;
+}
+span.commandsep {
+ display: none;
+}
+span.command-defs {
+}
+span.command {
+}
+span.output {
+}
+span.fold-message {
+  color: #a7a7a7;
+  background-color: #003b6c;
+}
+span.message {
+  color: #ffff00;
+}
+span.prompt {
+  color: #e400b6;
+}
+span.exception {
+  color: #ff8080;
+}
+span.result-ind {
+  color: #0000ff;
+}
+span.result {
+  color: #bcffff;
+}
+span.stderr {
+  color: #ff8080;
+}
+span.stdout {
+  color: #bcffff;
+}
+span.stdin {
+}
+span.bracket-match {
+  background-color: #00008b;
+}
+span.comment {
+  color: #c9a3a0;
+}
+span.number {
+  color: #aeacff;
+}
+span.string {
+  color: #00e400;
+}
+span.builtin {
+  color: #efcfcf;
+}
+span.keyword {
+  color: #ff7700;
+}
+</style>
+</head>
+<body><span class="message">Python 2.6.4 (r264:75708, Oct 26 2009, 08:23:19) [MSC v.1500 32 bit (Intel)] on win32
+Type "copyright", "credits" or "license()" for more information.
+DreamPie 1.0
+</span><span class="command"><span class="prompt">&gt;&gt;&gt; </span><span class="keyword">from</span> boto.ec2.connection <span class="keyword">import</span> EC2Connection
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>conn = EC2Connection()
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>regions = conn.get_all_regions()
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>regions
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">0: </span><span class="result">[RegionInfo:eu-west-1,
+ RegionInfo:us-east-1,
+ RegionInfo:ap-northeast-1,
+ RegionInfo:us-west-1,
+ RegionInfo:ap-southeast-1]
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>conn_eu = regions[<span class="number">0</span>].connect()
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>conn_eu.get_all_security_groups()
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">1: </span><span class="result">[SecurityGroup:default, SecurityGroup:ai_securitygroup]
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>conn_eu.get_all_security_groups()[<span class="number">0</span>].rules
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">2: </span><span class="result">[IPPermissions:tcp(0-65535),
+ IPPermissions:udp(0-65535),
+ IPPermissions:icmp(-1--1)]
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>conn_eu.get_all_security_groups()[<span class="number">1</span>].rules
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">3: </span><span class="result">[IPPermissions:tcp(22-22),
+ IPPermissions:tcp(80-80),
+ IPPermissions:tcp(443-443),
+ IPPermissions:tcp(3389-3389)]
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>loadbalancer = conn_eu.create_security_group(<span class="string">"loadbalancer"</span>, <span class="string">"Load Balancer Group"</span>)
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>loadbalancer
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">4: </span><span class="result">SecurityGroup:loadbalancer
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>loadbalancer.authorize(<span class="string">"tcp"</span>, <span class="number">80</span>, <span class="number">80</span>, <span class="string">"0.0.0.0/0"</span>)
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">5: </span><span class="result">True
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>loadbalancer.authorize(<span class="string">"tcp"</span>, <span class="number">443</span>, <span class="number">443</span>, <span class="string">"0.0.0.0/0"</span>)
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">6: </span><span class="result">True
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>webmachine = conn_eu.create_security_group(<span class="string">"webmachine"</span>, <span class="string">"Webmachine Group"</span>)
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>riak = conn_eu.create_security_group(<span class="string">"riak"</span>, <span class="string">"Riak Group"</span>)
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>loadbalancer.authorize(<span class="string">"ssh"</span>, <span class="number">22</span>, <span class="number">22</span>, <span class="string">"91.106.167.114/32"</span>)
+</span><span class="commandsep"></span><span class="output"><span class="exception">Traceback (most recent call last):
+  File "&lt;pyshell#14&gt;", line 1, in &lt;module&gt;
+    loadbalancer.authorize("ssh", 22, 22, "91.106.167.114/32")
+  File "C:\Python26\lib\site-packages\boto-1.9b-py2.6.egg\boto\ec2\securitygroup.py", line 146, in authorize
+    cidr_ip)
+  File "C:\Python26\lib\site-packages\boto-1.9b-py2.6.egg\boto\ec2\connection.py", line 1343, in authorize_security_group
+    return self.get_status('AuthorizeSecurityGroupIngress', params)
+  File "C:\Python26\lib\site-packages\boto-1.9b-py2.6.egg\boto\connection.py", line 647, in get_status
+    raise self.ResponseError(response.status, response.reason, body)
+EC2ResponseError: EC2ResponseError: 400 Bad Request
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;Response&gt;&lt;Errors&gt;&lt;Error&gt;&lt;Code&gt;InvalidPermission.Malformed&lt;/Code&gt;&lt;Message&gt;Unsupported IP protocol "ssh"  - supported: [tcp, udp, icmp]&lt;/Message&gt;&lt;/Error&gt;&lt;/Errors&gt;&lt;RequestID&gt;7e19ca89-c2c1-44bb-acb7-3faa8c9a9c5c&lt;/RequestID&gt;&lt;/Response&gt;
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>loadbalancer.authorize(<span class="string">"tcp"</span>, <span class="number">22</span>, <span class="number">22</span>, <span class="string">"91.106.167.114/32"</span>)
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">7: </span><span class="result">True
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>webmachine.authorize(<span class="string">"tcp"</span>, <span class="number">22</span>, <span class="number">22</span>, <span class="string">"91.106.167.114/32"</span>)
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">8: </span><span class="result">True
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>riak.authorize(<span class="string">"tcp"</span>, <span class="number">22</span>, <span class="number">22</span>, <span class="string">"91.106.167.114/32"</span>)
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">9: </span><span class="result">True
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>loadbalancer.authorize(src_group=webmachine)
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">10: </span><span class="result">True
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>webmachine.authorize(src_group=loadbalancer)
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">11: </span><span class="result">True
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>loadbalancer.authorize(src_group=riak)
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">12: </span><span class="result">True
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>webmachine.authorize(src_group=riak)
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">13: </span><span class="result">True
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>riak.authorize(src_group=loadbalancer)
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">14: </span><span class="result">True
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>riak.authorize(src_group=webmachine)
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">15: </span><span class="result">True
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>loadbalancer.rules
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">16: </span><span class="result">[IPPermissions:tcp(80-80),
+ IPPermissions:tcp(443-443),
+ IPPermissions:tcp(22-22),
+ IPPermissions:None(None-None),
+ IPPermissions:None(None-None)]
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>riak.authorize(src_group=riak)
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">17: </span><span class="result">True
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>region_eu = [region <span class="keyword">for</span> region <span class="keyword">in</span> conn.get_all_regions() <span class="keyword">if</span> <span class="string">"eu-west"</span> <span class="keyword">in</span> region.name][<span class="number">0</span>]
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>region_eu
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">18: </span><span class="result">RegionInfo:eu-west-1
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>image = conn_eu.get_image(<span class="string">"ami-4fe7d03b"</span>)
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>key_pair = conn_eu.get_all_key_pairs(keynames=[<span class="string">"ai_keypair"</span>])
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>key_pair
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">19: </span><span class="result">[KeyPair:ai_keypair]
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>key_pair = conn_eu.get_all_key_pairs(keynames=[<span class="string">"ai_keypair"</span>])[<span class="number">0</span>]
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span><span class="keyword">import</span> json
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>user_data_dict = {<span class="string">"key1"</span>: <span class="string">"value1"</span>, <span class="string">"key2"</span>: <span class="string">"value2"</span>}
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>user_data = json.dumps(user_data_dict)
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>user_data
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">20: </span><span class="result">'{"key2": "value2", "key1": "value1"}'
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>key_name = <span class="string">"ai_keypair"</span>
+<span class="prompt">... </span>security_groups = [loadbalancer]
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>reservation = image.run(key_name=key_name, security_groups=security_groups(), user_data=user_data, instance_type=<span class="string">"t1.micro"</span>)
+</span><span class="commandsep"></span><span class="output"><span class="exception">Traceback (most recent call last):
+  File "&lt;pyshell#37&gt;", line 1, in &lt;module&gt;
+    reservation = image.run(key_name=key_name, security_groups=security_groups(), user_data=user_data, instance_type="t1.micro")
+TypeError: 'list' object is not callable
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>reservation = image.run(key_name=key_name, security_groups=security_groups, user_data=user_data, instance_type=<span class="string">"t1.micro"</span>)
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>reservation
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">21: </span><span class="result">Reservation:r-434bb435
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span><span class="builtin">dir</span>(reservation)
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">22: </span><span class="result">['RunInstancesResponse',
+ '__class__',
+ '__delattr__',
+ '__dict__',
+ '__doc__',
+ '__format__',
+ '__getattribute__',
+ '__hash__',
+ '__init__',
+ '__module__',
+ '__new__',
+ '__reduce__',
+ '__reduce_ex__',
+ '__repr__',
+ '__setattr__',
+ '__sizeof__',
+ '__str__',
+ '__subclasshook__',
+ '__weakref__',
+ 'connection',
+ 'endElement',
+ 'groups',
+ 'id',
+ 'instances',
+ 'owner_id',
+ 'region',
+ 'requestId',
+ 'startElement',
+ 'stop_all']
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>instance = reservation.instances[<span class="number">0</span>]
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>instance
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">23: </span><span class="result">Instance:i-77f45901
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>instance.state
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">24: </span><span class="result">u'pending'
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>instance.update(); instance.state
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">25: </span><span class="result">u'running'
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>instance.dns_name
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">26: </span><span class="result">u'ec2-79-125-50-171.eu-west-1.compute.amazonaws.com'
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>instance.private_dns_name
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">27: </span><span class="result">u'ip-10-56-54-10.eu-west-1.compute.internal'
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>instances =conn_eu.get_all_instances()
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>instances
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">28: </span><span class="result">[Reservation:r-434bb435]
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>instance = instances[<span class="number">0</span>]
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span><span class="builtin">dir</span>(instance)
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">29: </span><span class="result">['__class__',
+ '__delattr__',
+ '__dict__',
+ '__doc__',
+ '__format__',
+ '__getattribute__',
+ '__hash__',
+ '__init__',
+ '__module__',
+ '__new__',
+ '__reduce__',
+ '__reduce_ex__',
+ '__repr__',
+ '__setattr__',
+ '__sizeof__',
+ '__str__',
+ '__subclasshook__',
+ '__weakref__',
+ 'connection',
+ 'endElement',
+ 'groups',
+ 'id',
+ 'instances',
+ 'item',
+ 'owner_id',
+ 'region',
+ 'startElement',
+ 'stop_all']
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>instance.groups()
+</span><span class="commandsep"></span><span class="output"><span class="exception">Traceback (most recent call last):
+  File "&lt;pyshell#51&gt;", line 1, in &lt;module&gt;
+    instance.groups()
+TypeError: 'ResultSet' object is not callable
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>instance.groups
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">30: </span><span class="result">[&lt;boto.ec2.instance.Group instance at 0x02F01CD8&gt;]
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>instance.groups[<span class="number">0</span>]
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">31: </span><span class="result">&lt;boto.ec2.instance.Group instance at 0x02F01CD8&gt;
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>conn_eu.get_all_instances()
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">32: </span><span class="result">[Reservation:r-434bb435]
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>conn_eu.get_all_instances()[<span class="number">0</span>]
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">33: </span><span class="result">Reservation:r-434bb435
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span><span class="builtin">dir</span>(conn_eu.get_all_instances()[<span class="number">0</span>])
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">34: </span><span class="result">['__class__',
+ '__delattr__',
+ '__dict__',
+ '__doc__',
+ '__format__',
+ '__getattribute__',
+ '__hash__',
+ '__init__',
+ '__module__',
+ '__new__',
+ '__reduce__',
+ '__reduce_ex__',
+ '__repr__',
+ '__setattr__',
+ '__sizeof__',
+ '__str__',
+ '__subclasshook__',
+ '__weakref__',
+ 'connection',
+ 'endElement',
+ 'groups',
+ 'id',
+ 'instances',
+ 'item',
+ 'owner_id',
+ 'region',
+ 'startElement',
+ 'stop_all']
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>conn_eu.get_all_instances()[<span class="number">0</span>].groups()
+</span><span class="commandsep"></span><span class="output"><span class="exception">Traceback (most recent call last):
+  File "&lt;pyshell#57&gt;", line 1, in &lt;module&gt;
+    conn_eu.get_all_instances()[0].groups()
+TypeError: 'ResultSet' object is not callable
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>conn_eu.get_all_instances()[<span class="number">0</span>].groups
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">35: </span><span class="result">[&lt;boto.ec2.instance.Group instance at 0x02F043A0&gt;]
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>conn_eu.get_all_instances()[<span class="number">0</span>].groups[<span class="number">0</span>]
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">36: </span><span class="result">&lt;boto.ec2.instance.Group instance at 0x02F04508&gt;
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span><span class="builtin">dir</span>(conn_eu.get_all_instances()[<span class="number">0</span>].groups[<span class="number">0</span>])
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">37: </span><span class="result">['__doc__',
+ '__init__',
+ '__module__',
+ 'endElement',
+ 'id',
+ 'item',
+ 'startElement']
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>conn_eu.get_all_instances()[<span class="number">0</span>].groups[<span class="number">0</span>].<span class="builtin">id</span>
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">38: </span><span class="result">u'loadbalancer'
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>security_groups = [webmachine]
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>reservation = image.run(key_name=key_name, security_groups=security_groups, user_data=user_data, instance_type=<span class="string">"t1.micro"</span>)
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>security_groups = [riak]
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>reservation = image.run(key_name=key_name, security_groups=security_groups, user_data=user_data, instance_type=<span class="string">"t1.micro"</span>)
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>image
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">39: </span><span class="result">Image:ami-4fe7d03b
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>conn_eu.get_image(<span class="string">"ami-c3e6d1b7"</span>)
+</span><span class="commandsep"></span><span class="output"><span class="result-ind">40: </span><span class="result">Image:ami-c3e6d1b7
+</span></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>image = conn_eu.get_image(<span class="string">"ami-c3e6d1b7"</span>)
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span>security_groups = [webmachine]
+<span class="prompt">... </span>reservation = image.run(key_name=key_name, security_groups=security_groups, user_data=user_data, instance_type=<span class="string">"t1.micro"</span>)
+<span class="prompt">... </span>security_groups = [riak]
+<span class="prompt">... </span>reservation = image.run(key_name=key_name, security_groups=security_groups, user_data=user_data, instance_type=<span class="string">"t1.micro"</span>)
+</span><span class="commandsep"></span><span class="command"><span class="prompt">&gt;&gt;&gt; </span></span></body>
+</html>

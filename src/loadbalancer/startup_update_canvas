@@ -1,0 +1,9 @@
+#!/bin/bash
+
+cd /home/ubuntu/
+rm -rf canvas
+git clone git://github.com/asimihsan/canvas.git
+cd canvas
+git checkout master
+cd /home/ubuntu/
+chown -R ubuntu:ubuntu canvas

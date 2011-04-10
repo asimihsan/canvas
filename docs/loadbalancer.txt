@@ -3,12 +3,15 @@
 #   a load balancer instance.
 # ----------------------------------------------------------------------
 
+# ----------------------------------------------------------------------
+#   Use Python "boto" module to start up the load balancer AMI.
+# ----------------------------------------------------------------------
+
 -  Public AMI ID "ami-4fe7d03b" is our base EBS-backed AMI.
 -  We've set up system environment variables AWS_ACCSS_KEY_ID and AWS_SECRET_ACCESS_KEY on our local machine.
 
 from boto.ec2.connection import EC2Connection
 conn = EC2Connection()
-conn_eu = conn.get_all_regions()
 region_eu = [region for region in conn.get_all_regions() if "eu-west" in region.name][0]
 conn_eu = region_eu.connect()
 
@@ -26,6 +29,17 @@ security_groups = [loadbalancer]
 reservation = image.run(key_name=key_name, security_groups=security_groups, user_data=user_data, instance_type="t1.micro")
 instance = reservation.instances[0]
 
+my_ami = conn_eu.get_all_images(owners=[os.environ["AWS_ACCOUNT_ID"]])
+loadbalancer_ami = [ami for ami in my_ami if "Current base loadbalancer" in ami.description][0]
+>>> reservation = loadbalancer_ami.run(key_name="ai_keypair",
+...                                    user_data=None,
+...                                    security_groups=conn_eu.get_all_security_groups("loadbalancer"),
+...                                    instance_type="t1.micro")
+... instance = reservation.instances[0]
+... instance.add_tag("primary", "true")
+>>> instance.update(); instance.state
+2: u'pending'
+
 # update, get state, repeat
 instance.update(); instance.state
 
@@ -33,11 +47,27 @@ instance.update(); instance.state
 # add key information to ~/.aws_keys, dot it into ~/.bash_profile
 ls -l /etc/update-motd.d/, and fix the annoying messages
 
+# ----------------------------------------------------------------------
+#   HAProxy setup
+# ----------------------------------------------------------------------
+-  install haproxy from source, use previous instructions
+-  git clone the canvas code
 
-# ----------------------------------------------------------------------
-#   Use Python "boto" module to start up the load balancer AMI.
-# ----------------------------------------------------------------------
+-  init.d from (but when have time revamp and base on /etc/init.d/skeleton):
+http://www.gubatron.com/blog/2011/04/06/have-the-latest-haproxy-as-a-ubuntu-service/
+
+-  show /etc/init.d/haproxy, make sure chmod a+x
+-  show /etc/default/haproxy, needs ENABLED=1
+-  use following URL to set up UDP logging:
+
+http://kevin.vanzonneveld.net/techblog/article/haproxy_logging/
 
 -  In order to hot reconfigure haproxy (the -sf flag means that
 we wait for existing connections to end.  Use -st to break them), execute: 
-haproxy -p /var/run/haproxy.pid -sf $(cat /var/run/haproxy.pid)
+sudo haproxy -f /home/ubuntu/canvas/src/loadbalancer/haproxy.conf -d -sf $(pidof haproxy)
+
+-  add /etc/init.d/startup_update_canvas, then
+cd /etc/init.d && sudo update-rc.d startup_update_canvas default
+
+-  eventually use tags to have "primary" and "backup" load balancers, allocate
+   elastic IP accordingly.
