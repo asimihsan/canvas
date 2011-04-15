@@ -37,7 +37,7 @@ AWS_REGION = "eu-west"
 AWS_WEBMACHINE_GROUP_NAME = "webmachine"
 AWS_RIAK_GROUP_NAME = "riak"
 
-HAPROXY_CONF_WEBMACHINE_TEMPL = Template("  server Webmachine${num} ${ip}:${port}\n")
+HAPROXY_CONF_WEBMACHINE_TEMPL = Template("  server Webmachine${num} ${ip}:${port} check addr ${ip} port ${port}\n")
 HAPROXY_CONF_RIAK_TEMPL = Template("  server Riak${num} ${ip}:${pb_port} check addr ${ip} port ${http_port}\n")
 # ----------------------------------------------------------------------
 

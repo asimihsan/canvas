@@ -19,7 +19,7 @@ distclean: clean
 	@./rebar delete-deps
 
 webstart: app
-	exec erl -pa $(PWD)/apps/*/ebin -pa $(PWD)/deps/*/ebin -boot start_sasl -s reloader -s csd_core -s csd_web
+	exec erl -pa $(PWD)/apps/*/ebin -pa $(PWD)/deps/*/ebin -boot start_sasl -s reloader -s csd_core -s csd_web +K true
 
 proxystart:
 	@haproxy -f dev.haproxy.conf

@@ -73,7 +73,7 @@ q().
 # ----------------------------------------------------------------------
 #   Install HAProxy
 # ----------------------------------------------------------------------
-cd ~/Downloads/
+mkdir -p ~/downloads/ && cd ~/downloads/
 wget http://haproxy.1wt.eu/download/1.4/src/haproxy-1.4.15.tar.gz
 tar xvf haproxy-1.4.15.tar.gz
 cd haproxy-1.4.15

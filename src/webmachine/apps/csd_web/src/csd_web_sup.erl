@@ -45,9 +45,15 @@ init([]) ->
     {ok, Dispatch} = file:consult(filename:join(
                          [filename:dirname(code:which(?MODULE)),
                           "..", "priv", "dispatch.conf"])),
+    %% Find WEBMACHINE_PORT system environment variable.  If pattern
+    %% match fails the csd_web_sup will fail to start.    
+    case os:getenv("WEBMACHINE_PORT") of
+        Any2 ->
+            Port = list_to_integer(Any2)
+    end,
     WebConfig = [
                  {ip, Ip},
-                 {port, 8000},
+                 {port, Port},
                  {log_dir, "priv/log"},
                  {dispatch, Dispatch}],
     Web = {webmachine_mochiweb,
