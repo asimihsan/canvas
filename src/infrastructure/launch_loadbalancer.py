@@ -25,26 +25,40 @@ KEY_NAME = "ai_keypair"
 # This is the IP address of your personal machine.  We use this
 # to only allow SSH access to your personal machine.  Get it from
 # http://whatismyipaddress.com/
-PERSONAL_IP_ADDRESS = "2.25.200.224"
-# ----------------------------------------------------------------------
-
-# ----------------------------------------------------------------------
-# Constants to leave alone.
-# ----------------------------------------------------------------------
-
+PERSONAL_IP_ADDRESS = "2.25.200.198"
 # ----------------------------------------------------------------------
 
 import os
 import sys
 import time
 from boto.ec2.connection import EC2Connection
+from string import Template
+
+# ----------------------------------------------------------------------
+# Constants to leave alone.
+# ----------------------------------------------------------------------
+
+# User data, if prefixed by the bash she bang, will be executed
+# on startup.
+USER_DATA = \
+"""#!/bin/bash
+rm -rf /home/ubuntu/canvas
+git clone git://github.com/asimihsan/canvas.git /home/ubuntu/canvas
+cd /home/ubuntu/canvas
+git checkout part3
+sudo chown -R ubuntu:ubuntu /home/ubuntu/canvas
+"""
+
+# ----------------------------------------------------------------------
+
+
     
 import logging
 logger = logging.getLogger('launch_loadbalancer')
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 logger = logging.getLogger('launch_loadbalancer')
@@ -163,7 +177,8 @@ if __name__ == "__main__":
     image_loadbalancer = conn_eu.get_image(BASE_AMI_ID)
     reservation = image_loadbalancer.run(key_name=KEY_NAME,
                                          security_groups=[sg_loadbalancer],
-                                         instance_type="t1.micro")
+                                         instance_type="t1.micro",
+                                         user_data=USER_DATA)
     instance = reservation.instances[0]
     while 1:
         time.sleep(3)

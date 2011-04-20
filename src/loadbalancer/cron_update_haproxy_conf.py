@@ -152,7 +152,7 @@ if __name__ == "__main__":
         webmachine_instances.sort(key=operator.attrgetter("private_ip_address"))
         for (i, instance) in enumerate(webmachine_instances, start=1):
             logger.debug("Inserting webmachine instance: '%s'" % (instance, ))
-            if not "webmachine_port" in instance.tag:
+            if not "webmachine_port" in instance.tags:
                 logger.error("Webmachine instance is missing 'webmachine_port' tag.  Skip")
                 continue
             assert("webmachine_port" in instance.tags)
