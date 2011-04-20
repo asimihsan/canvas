@@ -52,7 +52,7 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 if not os.path.isdir(LOG_PATH):
-    os.mkdir(LOG_PATH)
+    os.makedirs(LOG_PATH)
 fh = logging.handlers.RotatingFileHandler(os.path.join(LOG_PATH, '%s.log' % (APP_NAME, )), maxBytes=10000000, backupCount=5)
 fh.setFormatter(formatter)
 fh.setLevel(logging.DEBUG)
