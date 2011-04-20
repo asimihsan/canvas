@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# haproxyd
+# Script to start|stop|restart haproxy from /etc/init.d/
+# By Gubatron.
+
+HAPROXY_CONFIG_PATH=/home/ubuntu/canvas/src/loadbalancer/haproxy.conf
+HAPROXY_DAEMON=/usr/local/sbin/haproxy
+
+test -x $HAPROXY_DAEMON || exit 0
+
+set -e
+
+function getHaproxyPID() {
+  PID=`ps aux | grep 'haproxy -f' | grep -v "grep" | awk '{ print $2 }'`
+}
+
+case $1 in
+  start)
+        echo "Starting haproxy..."
+        sudo $HAPROXY_DAEMON -f $HAPROXY_CONFIG_PATH
+        ;;
+  restart)
+        echo "Soft hot restart of haproxy"
+        getHaproxyPID
+        COMMAND="sudo $HAPROXY_DAEMON -f $HAPROXY_CONFIG_PATH -sf $PID"
+        echo $COMMAND
+        `$COMMAND`
+        ;;
+  hard-restart)
+        echo "Hard hot restart of haproxy"
+        getHaproxyPID
+        COMMAND="sudo $HAPROXY_DAEMON -f $HAPROXY_CONFIG_PATH -st $PID"
+        echo $COMMAND
+        `$COMMAND`
+        ;;
+  force-reload)
+        echo "Force reload (hard hot restart) of haproxy"
+        getHaproxyPID
+        COMMAND="sudo $HAPROXY_DAEMON -f $HAPROXY_CONFIG_PATH -st $PID"
+        echo $COMMAND
+        `$COMMAND`
+        ;;
+  stop)
+        echo "Stopping haproxy"
+        getHaproxyPID
+        COMMAND="sudo kill -9 $PID"
+        echo $COMMAND
+        `$COMMAND`
+        ;;
+  *)
+        echo "Usage: haproxyd {start|restart|stop}" >&2
+        exit 1
+        ;;
+esac
+
+exit 0
+

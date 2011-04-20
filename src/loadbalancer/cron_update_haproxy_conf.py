@@ -152,9 +152,9 @@ if __name__ == "__main__":
         webmachine_instances.sort(key=operator.attrgetter("private_ip_address"))
         for (i, instance) in enumerate(webmachine_instances, start=1):
             logger.debug("Inserting webmachine instance: '%s'" % (instance, ))
-            assert("port" in instance.tags)
+            assert("webmachine_port" in instance.tags)
             ip = instance.private_ip_address
-            port = instance.tags["port"]
+            port = instance.tags["webmachine_port"]
             line = HAPROXY_CONF_WEBMACHINE_TEMPL.substitute(num=i, ip=ip, port=port)
             logger.debug("Line is: %s" % (line.strip(), ))
             webmachine_lines.append(line)
@@ -162,11 +162,11 @@ if __name__ == "__main__":
         riak_instances.sort(key=operator.attrgetter("private_ip_address"))
         for (i, instance) in enumerate(riak_instances, start=1):
             logger.debug("Inserting riak instance: '%s'" % (instance, ))
-            assert("pb_port" in instance.tags)
-            assert("http_port" in instance.tags)            
+            assert("riak_pb_port" in instance.tags)
+            assert("riak_http_port" in instance.tags)            
             ip = instance.private_ip_address
-            pb_port = instance.tags["pb_port"]
-            http_port = instance.tags["http_port"]
+            pb_port = instance.tags["riak_pb_port"]
+            http_port = instance.tags["riak_http_port"]
             line = HAPROXY_CONF_RIAK_TEMPL.substitute(num=i, ip=ip, pb_port=pb_port, http_port=http_port)
             logger.debug("Line is: %s" % (line.strip(), ))
             riak_lines.append(line)    
