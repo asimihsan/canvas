@@ -43,8 +43,6 @@ STARTING_WEBMACHINE_PORT = 8000
 
 # User data, if prefixed by the bash she bang, will be executed
 # on startup.
-#
-# TODO export doesn't work.  Stash port somewhere readable from Erlang.
 USER_DATA = \
 Template("""#!/bin/bash
 
@@ -59,7 +57,7 @@ cd /home/ubuntu/canvas
 git checkout part3
 sudo chown -R ubuntu:ubuntu /home/ubuntu/canvas
 
-/home/ubuntu/canvas/src/infrastructure/ec2userdata_to_environment.py
+/usr/local/bin/python /home/ubuntu/canvas/src/infrastructure/ec2tag_to_environment.py
 """)
 
 # What region to use.
@@ -159,7 +157,7 @@ if __name__ == "__main__":
     # running or not, and assume they're still using up ports.  Take
     # the next free port.
     taken_webmachine_ports = [STARTING_WEBMACHINE_PORT-1]
-    all_reservations = con.get_all_instances()
+    all_reservations = conn.get_all_instances()
     for reservation in all_reservations:
         if any(group.id == "webmachine" for group in reservation.groups):
             for instance in reservation.instances:

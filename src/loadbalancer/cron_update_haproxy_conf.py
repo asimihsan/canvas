@@ -122,9 +122,9 @@ if __name__ == "__main__":
     logger.debug("Establishing AWS EC2 boto connection...")
     conn = EC2Connection()
     logger.debug("Established AWS EC2 boto connection.")
-    region_eu = [region for region in conn.get_all_regions() if AWS_REGION in region.name][0]
-    conn_eu = region_eu.connect()    
-    all_reservations = conn_eu.get_all_instances()
+    all_connections = [region.connect() for region in conn_root.get_all_regions()]
+    all_reservations = [instance for connection in all_connections                          
+                                 for reservation in connection.get_all_instances()]    
     webmachine_instances = []
     riak_instances = []
     for reservation in all_reservations:
@@ -190,7 +190,8 @@ if __name__ == "__main__":
                 contents.pop(i+1)
             for webmachine_line in webmachine_lines:
                 contents.insert(i+1, webmachine_line)
-        elif RE_RIAK_START.search(line):
+    for (i, line) in enumerate(contents[:-1]):        
+        if RE_RIAK_START.search(line):
             while not RE_RIAK_END.search(contents[i+1]):
                 contents.pop(i+1)
             for riak_line in riak_lines:
