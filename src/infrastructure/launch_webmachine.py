@@ -30,16 +30,13 @@ import sys
 import time
 from boto.ec2.connection import EC2Connection
 from string import Template
+import datetime
+import re
+import operator
 
 # ----------------------------------------------------------------------
 # Constants to leave alone.
 # ----------------------------------------------------------------------
-
-# This is the public AMI ID for the AMI I created at the end of Part
-# 2.  This is different from the AMI you used in launch_loadbalancer.py
-# because this doesn't come with HAProxy, and is missing the secret
-# credentials that go inside ~/.aws_keys.
-BASE_AMI_ID = "ami-4fe7d03b"
 
 # What port number to start using for Webmachine instances
 STARTING_WEBMACHINE_PORT = 8000
@@ -50,14 +47,40 @@ STARTING_WEBMACHINE_PORT = 8000
 # TODO export doesn't work.  Stash port somewhere readable from Erlang.
 USER_DATA = \
 Template("""#!/bin/bash
+
+. /home/ubuntu/.bash_profile
+pip install -U httplib2 boto
+sudo apt-get update
+yes yes | sudo apt-get upgrade
+
 rm -rf /home/ubuntu/canvas
 git clone git://github.com/asimihsan/canvas.git /home/ubuntu/canvas
 cd /home/ubuntu/canvas
 git checkout part3
 sudo chown -R ubuntu:ubuntu /home/ubuntu/canvas
 
-sudo export WEBMACHINE_PORT=${webmachine_port}
+/home/ubuntu/canvas/src/infrastructure/ec2userdata_to_environment.py
 """)
+
+# What region to use.
+REGION_NAME = "eu-west-1"
+
+# Regular expression for a datetime string
+re1='.*?'	# Non-greedy match on filler
+re2='(webmachine)'	# Word 1
+re3='.*?'	# Non-greedy match on filler
+re4='(?P<year>\\d+)'	# Integer Number 1
+re5='(_)'	# Any Single Character 1
+re6='(?P<month>\\d+)'	# Integer Number 2
+re7='(_)'	# Any Single Character 2
+re8='(?P<day>\\d+)'	# Integer Number 3
+re9='(T)'	# Any Single Word Character (Not Whitespace) 1
+re10='(?P<hour>\\d+)'	# Integer Number 4
+re11='(_)'	# Any Single Character 3
+re12='(?P<minute>\\d+)'	# Integer Number 5
+re13='(_)'	# Any Single Character 4
+re14='(?P<second>\\d+)'	# Integer Number 6
+RE_DATETIME = re.compile(''.join([re1,re2,re3,re4,re5,re6,re7,re8,re9,re10,re11,re12,re13,re14]), re.IGNORECASE|re.DOTALL)
 
 # ----------------------------------------------------------------------
     
@@ -86,18 +109,47 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------
     # Get a connection to the EU region.
     # ------------------------------------------------------------------
-    logger.debug("Get connection to the EU region...")
-    conn = EC2Connection()
-    region_eu = [region for region in conn.get_all_regions() if "eu-west" in region.name][0]
-    conn_eu = region_eu.connect()
+    logger.debug("Get connection to the %s region..." % (REGION_NAME, ))
+    conn_root = EC2Connection()
+    region = [region for region in conn_root.get_all_regions() if REGION_NAME in region.name][0]
+    conn = region.connect()
     # ------------------------------------------------------------------
     
     # ------------------------------------------------------------------
-    # Launch a new EC2 instance based on the public AMI from Part 2.
+    # Get the AMI ID for the more recent Webmachine image.
     # ------------------------------------------------------------------
-    logger.debug("Launching EC2 instance with AMI ID: '%s'" %  (BASE_AMI_ID, ))
-    image_webmachine = conn_eu.get_image(BASE_AMI_ID)
-    existing_sgs = dict([(sg.name, sg) for sg in conn_eu.get_all_security_groups()])
+    logger.debug("Finding latest Webmachine AMI ID...")
+    all_images = conn.get_all_images()
+    logger.debug("There are %s image(s) in total." % (len(all_images), ))
+    my_images = [image for image in all_images if image.owner_id == os.environ["AWS_ACCOUNT_ID"]]
+    logger.debug("There are %s image(s) that belong to me." % (len(my_images), ))
+    webmachine_images = [image for image in my_images if "Base webmachine" in image.name]
+    logger.debug("There are %s webmachine image(s)." % (len(webmachine_images), ))
+    
+    images_and_dates = []
+    for image in webmachine_images:
+        datetime_re_obj = RE_DATETIME.search(image.name)
+        if not datetime_re_obj:
+            logger.error("AMI ID '%s' with name '%s'.  Could not parse datetime from name.  Skip" % (image.id, image.name))
+            continue
+        assert(datetime_re_obj)
+        datetime_obj = datetime.datetime(year=int(datetime_re_obj.groupdict()["year"]),
+                                         month=int(datetime_re_obj.groupdict()["month"]),
+                                         day=int(datetime_re_obj.groupdict()["day"]),
+                                         hour=int(datetime_re_obj.groupdict()["hour"]),
+                                         minute=int(datetime_re_obj.groupdict()["minute"]),
+                                         second=int(datetime_re_obj.groupdict()["second"]))
+        images_and_dates.append((image, datetime_obj))
+    images_and_dates.sort(key=operator.itemgetter(1), reverse=True)
+    image_webmachine = images_and_dates[0][0]
+    logger.info("Will use Webmachine AMI ID '%s', name '%s'" % (image_webmachine.id, image_webmachine.name))
+    # ------------------------------------------------------------------
+    
+    # ------------------------------------------------------------------
+    # Launch a new EC2 instance.
+    # ------------------------------------------------------------------
+    logger.info("Launching EC2 instance with AMI ID: '%s'" %  (image_webmachine.id, ))
+    existing_sgs = dict([(sg.name, sg) for sg in conn.get_all_security_groups()])
     if "webmachine" not in existing_sgs:
         logger.error("Could not find security group called 'webmachine'")
         sys.exit(2)        
@@ -107,7 +159,7 @@ if __name__ == "__main__":
     # running or not, and assume they're still using up ports.  Take
     # the next free port.
     taken_webmachine_ports = [STARTING_WEBMACHINE_PORT-1]
-    all_reservations = conn_eu.get_all_instances()
+    all_reservations = con.get_all_instances()
     for reservation in all_reservations:
         if any(group.id == "webmachine" for group in reservation.groups):
             for instance in reservation.instances:

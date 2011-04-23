@@ -49,9 +49,10 @@ git checkout part3
 sudo chown -R ubuntu:ubuntu /home/ubuntu/canvas
 """
 
+# What region to use.
+REGION_NAME = "eu-west-1"
+
 # ----------------------------------------------------------------------
-
-
     
 import logging
 logger = logging.getLogger('launch_loadbalancer')
@@ -105,15 +106,15 @@ if __name__ == "__main__":
     # Get a connection to the EU region.
     # ------------------------------------------------------------------
     logger.debug("Get connection to the EU region...")
-    conn = EC2Connection()
-    region_eu = [region for region in conn.get_all_regions() if "eu-west" in region.name][0]
-    conn_eu = region_eu.connect()
+    conn_root = EC2Connection()
+    region = [region for region in conn_root.get_all_regions() if REGION_NAME in region.name][0]
+    conn = region.connect()
     # ------------------------------------------------------------------
     
     # -----------------------------------------------------------------    
     # Stop all running instances, delete all elastic IPs.
     # ------------------------------------------------------------------
-    tear_down_running_state(conn_eu)
+    tear_down_running_state(conn)
     if "--only_delete" in sys.argv:
         sys.exit(2)
     # ------------------------------------------------------------------
@@ -125,7 +126,7 @@ if __name__ == "__main__":
     # security groups can be deleted.
     # ------------------------------------------------------------------    
     logger.debug("Delete existing security groups...")
-    existing_sgs = dict([(sg.name, sg) for sg in conn_eu.get_all_security_groups()])
+    existing_sgs = dict([(sg.name, sg) for sg in conn.get_all_security_groups()])
     sg_loadbalancer = [value for (key, value) in existing_sgs.items() if key == u"loadbalancer"]
     sg_webmachine = [value for (key, value) in existing_sgs.items() if key == u"webmachine"]
     sg_riak = [value for (key, value) in existing_sgs.items() if key == u"riak"]    
@@ -145,16 +146,16 @@ if __name__ == "__main__":
         if len(sg_webmachine) != 0:
             sg_riak[0].revoke(src_group=sg_webmachine[0])        
     if len(sg_loadbalancer) != 0:
-        conn_eu.delete_security_group("loadbalancer")
+        conn.delete_security_group("loadbalancer")
     if len(sg_webmachine) != 0:
-        conn_eu.delete_security_group("webmachine")
+        conn.delete_security_group("webmachine")
     if len(sg_riak) != 0:
-        conn_eu.delete_security_group("riak")        
+        conn.delete_security_group("riak")        
     
     logger.debug("Create new security groups...")            
-    sg_loadbalancer = conn_eu.create_security_group("loadbalancer", "Load Balancer Group")
-    sg_riak = conn_eu.create_security_group("riak", "Riak Group")
-    sg_webmachine = conn_eu.create_security_group("webmachine", "Webmachine Group")
+    sg_loadbalancer = conn.create_security_group("loadbalancer", "Load Balancer Group")
+    sg_riak = conn.create_security_group("riak", "Riak Group")
+    sg_webmachine = conn.create_security_group("webmachine", "Webmachine Group")
     
     sg_loadbalancer.authorize("tcp", 22, 22, "%s/32" % (PERSONAL_IP_ADDRESS, ))    
     sg_riak.authorize("tcp", 22, 22, "%s/32" % (PERSONAL_IP_ADDRESS, ))
@@ -174,7 +175,7 @@ if __name__ == "__main__":
     # Part 2.
     # ------------------------------------------------------------------
     logger.debug("Launching EC2 instance with AMI ID: '%s'" %  (BASE_AMI_ID, ))
-    image_loadbalancer = conn_eu.get_image(BASE_AMI_ID)
+    image_loadbalancer = conn.get_image(BASE_AMI_ID)
     reservation = image_loadbalancer.run(key_name=KEY_NAME,
                                          security_groups=[sg_loadbalancer],
                                          instance_type="t1.micro",
@@ -193,8 +194,8 @@ if __name__ == "__main__":
     # to the load balancer instance.
     # ------------------------------------------------------------------
     logger.debug("Getting a new elastic IP")
-    conn_eu.allocate_address()
-    address = conn_eu.get_all_addresses()[0]
+    conn.allocate_address()
+    address = conn.get_all_addresses()[0]
     logger.info("Associating elastic IP '%s' to instance ID '%s'" % (address.public_ip, instance.id))
     address.associate(instance.id)
     # ------------------------------------------------------------------
