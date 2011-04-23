@@ -25,7 +25,7 @@ KEY_NAME = "ai_keypair"
 # This is the IP address of your personal machine.  We use this
 # to only allow SSH access to your personal machine.  Get it from
 # http://whatismyipaddress.com/
-PERSONAL_IP_ADDRESS = "2.25.200.198"
+PERSONAL_IP_ADDRESS = "2.25.200.255"
 # ----------------------------------------------------------------------
 
 import os

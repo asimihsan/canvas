@@ -18,11 +18,6 @@
 
 # What your keypair name is, from Part 2.
 KEY_NAME = "ai_keypair"
-
-# This is the IP address of your personal machine.  We use this
-# to only allow SSH access to your personal machine.  Get it from
-# http://whatismyipaddress.com/
-PERSONAL_IP_ADDRESS = "2.25.200.198"
 # ----------------------------------------------------------------------
 
 import os
@@ -46,18 +41,28 @@ STARTING_WEBMACHINE_PORT = 8000
 USER_DATA = \
 Template("""#!/bin/bash
 
+LOGFILE=/home/ubuntu/output.log
+PYTHON_MODULES="boto httplib2"
+
+/usr/local/bin/python -c "import sys; import pprint;  pprint.pprint(sys.path)" >> ${LOGFILE} 2>&1 
+
 . /home/ubuntu/.bash_profile
-pip install -U httplib2 boto
-sudo apt-get update
-yes yes | sudo apt-get upgrade
+cd ~
+curl -O http://python-distribute.org/distribute_setup.py >> ${LOGFILE} 2>&1
+python distribute_setup.py >> ${LOGFILE} 2>&1
+easy_install -U ${PYTHON_MODULES} >> ${LOGFILE} 2>&1
+rm -f distribute_setup.py
+
+sudo apt-get update >> ${LOGFILE} 2>&1
+yes yes | sudo apt-get upgrade  >> ${LOGFILE} 2>&1
 
 rm -rf /home/ubuntu/canvas
-git clone git://github.com/asimihsan/canvas.git /home/ubuntu/canvas
+git clone git://github.com/asimihsan/canvas.git /home/ubuntu/canvas  >> ${LOGFILE} 2>&1
 cd /home/ubuntu/canvas
 git checkout part3
 sudo chown -R ubuntu:ubuntu /home/ubuntu/canvas
 
-/usr/local/bin/python /home/ubuntu/canvas/src/infrastructure/ec2tag_to_environment.py
+/usr/local/bin/python -u /home/ubuntu/canvas/src/infrastructure/ec2tag_to_environment.py >> ${LOGFILE} 2>&1
 
 """)
 
