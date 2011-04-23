@@ -27,6 +27,8 @@ HOME_FOLDER = "/home/ubuntu/"
 CANVAS_ROOT = os.path.join(HOME_FOLDER, "canvas")
 LOG_PATH = os.path.join(CANVAS_ROOT, "log")
 BASH_PROFILE_FILE = os.path.join(HOME_FOLDER, ".bash_profile")
+EC2TAG_FILE = os.path.join(HOME_FOLDER, ".ec2tags")
+EC2TAG_DOT_INCLUDE = ". ~/.ec2tags"
 
 AWS_REGION = "eu-west-1"
 # ----------------------------------------------------------------------
@@ -70,6 +72,12 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------
     with open(BASH_PROFILE_FILE) as f:
         lines = f.readlines()
+    if not any(EC2TAG_DOT_INCLUDE in line for line in lines):
+        logger.debug("EC2 tag dot include not found in bash_profile.  Add it.")
+        lines.append(EC2TAG_DOT_INCLUDE)
+        logger.debug("Writing to file %s" % (BASH_PROFILE_FILE, ))
+        with open(BASH_PROFILE_FILE, "w") as f:
+            f.write(''.join(lines))
     
     hostname = socket.getfqdn()
     logger.debug("My hostname is '%s'" % (hostname, ))
@@ -84,13 +92,12 @@ if __name__ == "__main__":
     my_instance = [instance for instance in all_instances if instance.private_dns_name == hostname][0]
     logger.info("I am instance ID '%s', AMI ID '%s'" % (my_instance.id, my_instance.image_id))
     
-    BASH_LINE = Template("export ${key}=${value}")
-    for (key, value) in my_instance.tags.items():
-        logger.debug("Setting key %s to value %s" % (key, value))
-        lines.append(BASH_LINE.substitute(key=key, value=value))
-        
-    logger.info("Writing file: '%s'" % (BASH_PROFILE_FILE, ))
-    with open(BASH_PROFILE_FILE, "w") as f:
-        f.write(''.join(lines))
-    
+    BASH_LINE = Template("export ${key}=${value}\n")    
+    with open(EC2TAG_FILE, "w") as f:
+        for (key, value) in my_instance.tags.items():
+            logger.debug("Setting key %s to value %s" % (key, value))
+            line = BASH_LINE.substitute(key=key, value=value)
+            f.write(line)
+        f.write("\n")
+                
     logger.info("exiting successfully.")

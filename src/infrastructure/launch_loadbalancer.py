@@ -42,11 +42,20 @@ from string import Template
 # on startup.
 USER_DATA = \
 """#!/bin/bash
+
+. /home/ubuntu/.bash_profile
+pip install -U httplib2 boto
+sudo apt-get update
+yes yes | sudo apt-get upgrade
+
 rm -rf /home/ubuntu/canvas
 git clone git://github.com/asimihsan/canvas.git /home/ubuntu/canvas
 cd /home/ubuntu/canvas
 git checkout part3
 sudo chown -R ubuntu:ubuntu /home/ubuntu/canvas
+
+/usr/local/bin/python /home/ubuntu/canvas/src/infrastructure/ec2tag_to_environment.py
+
 """
 
 # What region to use.

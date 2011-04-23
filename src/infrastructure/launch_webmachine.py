@@ -58,6 +58,7 @@ git checkout part3
 sudo chown -R ubuntu:ubuntu /home/ubuntu/canvas
 
 /usr/local/bin/python /home/ubuntu/canvas/src/infrastructure/ec2tag_to_environment.py
+
 """)
 
 # What region to use.
@@ -161,11 +162,11 @@ if __name__ == "__main__":
     for reservation in all_reservations:
         if any(group.id == "webmachine" for group in reservation.groups):
             for instance in reservation.instances:
-                if "webmachine_port" not in instance.tags:
-                    logger.warning("Tag 'webmachine_port' not found in instance ID %s marked as Webmachine instance." % (instance.id, ))
+                if "WEBMACHINE_PORT" not in instance.tags:
+                    logger.warning("Tag 'WEBMACHINE_PORT' not found in instance ID %s marked as Webmachine instance." % (instance.id, ))
                     continue
-                assert("webmachine_port" in instance.tags)
-                taken_webmachine_ports.append(int(instance.tags["webmachine_port"]))
+                assert("WEBMACHINE_PORT" in instance.tags)
+                taken_webmachine_ports.append(int(instance.tags["WEBMACHINE_PORT"]))
     webmachine_port = max(taken_webmachine_ports) + 1
     logger.debug("Will set WEBMACHINE_PORT tag to: '%s'" % (webmachine_port, ))
     user_data = USER_DATA.substitute(webmachine_port=webmachine_port)
@@ -180,7 +181,7 @@ if __name__ == "__main__":
         if instance.state != "pending":
             break
     logger.info("Webmachine instance now running with ID '%s' and public DNS name:\n%s" % (instance.id, instance.public_dns_name, ))    
-    instance.add_tag("webmachine_port", webmachine_port)
+    instance.add_tag("WEBMACHINE_PORT", webmachine_port)
     # ------------------------------------------------------------------    
 
     logger.info("exiting successfully.")

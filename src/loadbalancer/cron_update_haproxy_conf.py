@@ -122,9 +122,9 @@ if __name__ == "__main__":
     logger.debug("Establishing AWS EC2 boto connection...")
     conn = EC2Connection()
     logger.debug("Established AWS EC2 boto connection.")
-    all_connections = [region.connect() for region in conn_root.get_all_regions()]
-    all_reservations = [instance for connection in all_connections                          
-                                 for reservation in connection.get_all_instances()]    
+    all_connections = [region.connect() for region in conn.get_all_regions()]
+    all_reservations = [reservation for connection in all_connections                          
+                                    for reservation in connection.get_all_instances()]    
     webmachine_instances = []
     riak_instances = []
     for reservation in all_reservations:
@@ -152,12 +152,12 @@ if __name__ == "__main__":
         webmachine_instances.sort(key=operator.attrgetter("private_ip_address"))
         for (i, instance) in enumerate(webmachine_instances, start=1):
             logger.debug("Inserting webmachine instance: '%s'" % (instance, ))
-            if not "webmachine_port" in instance.tags:
-                logger.error("Webmachine instance is missing 'webmachine_port' tag.  Skip")
+            if not "WEBMACHINE_PORT" in instance.tags:
+                logger.error("Webmachine instance is missing 'WEBMACHINE_PORT' tag.  Skip")
                 continue
-            assert("webmachine_port" in instance.tags)
+            assert("WEBMACHINE_PORT" in instance.tags)
             ip = instance.private_ip_address
-            port = instance.tags["webmachine_port"]
+            port = instance.tags["WEBMACHINE_PORT"]
             line = HAPROXY_CONF_WEBMACHINE_TEMPL.substitute(num=i, ip=ip, port=port)
             logger.debug("Line is: %s" % (line.strip(), ))
             webmachine_lines.append(line)
@@ -165,17 +165,17 @@ if __name__ == "__main__":
         riak_instances.sort(key=operator.attrgetter("private_ip_address"))
         for (i, instance) in enumerate(riak_instances, start=1):
             logger.debug("Inserting riak instance: '%s'" % (instance, ))
-            if not "riak_pb_port" in instance.tag:
-                logger.error("Riak instance is missing 'riak_pb_port' tag.  Skip")
+            if not "RIAK_PB_PORT" in instance.tag:
+                logger.error("Riak instance is missing 'RIAK_PB_PORT' tag.  Skip")
                 continue            
-            if not "riak_http_port" in instance.tag:
-                logger.error("Riak instance is missing 'riak_http_port' tag.  Skip")
+            if not "RIAK_HTTP_PORT" in instance.tag:
+                logger.error("Riak instance is missing 'RIAK_HTTP_PORT' tag.  Skip")
                 continue                            
-            assert("riak_pb_port" in instance.tags)
-            assert("riak_http_port" in instance.tags)            
+            assert("RIAK_PB_PORT" in instance.tags)
+            assert("RIAK_HTTP_PORT" in instance.tags)            
             ip = instance.private_ip_address
-            pb_port = instance.tags["riak_pb_port"]
-            http_port = instance.tags["riak_http_port"]
+            pb_port = instance.tags["RIAK_PB_PORT"]
+            http_port = instance.tags["RIAK_HTTP_PORT"]
             line = HAPROXY_CONF_RIAK_TEMPL.substitute(num=i, ip=ip, pb_port=pb_port, http_port=http_port)
             logger.debug("Line is: %s" % (line.strip(), ))
             riak_lines.append(line)    
