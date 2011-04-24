@@ -43,18 +43,26 @@ from string import Template
 USER_DATA = \
 """#!/bin/bash
 
+LOGFILE=/home/ubuntu/output.log
+PYTHON_MODULES="boto httplib2"
+
 . /home/ubuntu/.bash_profile
-pip install -U httplib2 boto
-sudo apt-get update
-yes yes | sudo apt-get upgrade
+cd ~
+curl -O http://python-distribute.org/distribute_setup.py >> ${LOGFILE} 2>&1
+python distribute_setup.py >> ${LOGFILE} 2>&1
+easy_install -U ${PYTHON_MODULES} >> ${LOGFILE} 2>&1
+rm -f distribute_setup.py
+
+sudo apt-get update >> ${LOGFILE} 2>&1
+yes yes | sudo apt-get upgrade  >> ${LOGFILE} 2>&1
 
 rm -rf /home/ubuntu/canvas
-git clone git://github.com/asimihsan/canvas.git /home/ubuntu/canvas
+git clone git://github.com/asimihsan/canvas.git /home/ubuntu/canvas  >> ${LOGFILE} 2>&1
 cd /home/ubuntu/canvas
 git checkout part3
 sudo chown -R ubuntu:ubuntu /home/ubuntu/canvas
 
-/usr/local/bin/python /home/ubuntu/canvas/src/infrastructure/ec2tag_to_environment.py
+/usr/local/bin/python -u /home/ubuntu/canvas/src/infrastructure/ec2tag_to_environment.py >> ${LOGFILE} 2>&1
 
 """
 
