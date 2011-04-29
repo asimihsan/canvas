@@ -120,7 +120,11 @@ if __name__ == "__main__":
     #   indicate they're either webmachine or riak instances.    
     # ------------------------------------------------------------------    
     logger.debug("Establishing AWS EC2 boto connection...")
-    conn = EC2Connection()
+    try:
+        conn = EC2Connection()
+    except:
+        logger.exception("Unhandled exception.")
+        raise
     logger.debug("Established AWS EC2 boto connection.")
     all_connections = [region.connect() for region in conn.get_all_regions()]
     all_reservations = [reservation for connection in all_connections                          
