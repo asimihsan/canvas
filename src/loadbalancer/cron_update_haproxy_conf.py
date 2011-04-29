@@ -18,6 +18,7 @@ import re
 from string import Template
 from boto.ec2.connection import EC2Connection
 import operator
+import pprint
 
 # ----------------------------------------------------------------------
 #   Constants.
@@ -72,6 +73,13 @@ if __name__ == "__main__":
     if not os.path.isfile(HAPROXY_CONF):
         logger.error("HAPROXY_CONF is not a file: '%s'" % (HAPROXY_CONF, ))
         sys.exit(2)
+    for required_variable in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]:
+        if required_variable not in os.environ:
+            logger.error("Require %s as system environment variable.  Please see Part 2." % (required_variable, ))
+            sys.exit(1)        
+    logger.debug("System environment variables:\n%s" % (pprint.pformat(os.environ), ))
+    # ------------------------------------------------------------------        
+        
     # ------------------------------------------------------------------
     
     # ------------------------------------------------------------------
