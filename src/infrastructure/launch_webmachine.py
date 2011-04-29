@@ -39,33 +39,37 @@ STARTING_WEBMACHINE_PORT = 8000
 # User data, if prefixed by the bash she bang, will be executed
 # on startup.
 USER_DATA = \
-Template("""#!/bin/bash
+"""#!/bin/bash
 
 LOGFILE=/home/ubuntu/output.log
 PYTHON_MODULES="boto httplib2"
 
 . /home/ubuntu/.bash_profile
 cd ~
-curl -O http://python-distribute.org/distribute_setup.py >> $${LOGFILE} 2>&1
-python distribute_setup.py >> $${LOGFILE} 2>&1
-easy_install -U $${PYTHON_MODULES} >> $${LOGFILE} 2>&1
+curl -O http://python-distribute.org/distribute_setup.py >> ${LOGFILE} 2>&1
+python distribute_setup.py >> ${LOGFILE} 2>&1
+easy_install -U ${PYTHON_MODULES} >> ${LOGFILE} 2>&1
 rm -f distribute_setup.py
 
-sudo apt-get update >> $${LOGFILE} 2>&1
-yes yes | sudo apt-get upgrade  >> $${LOGFILE} 2>&1
+sudo apt-get update >> ${LOGFILE} 2>&1
+yes yes | sudo apt-get upgrade  >> ${LOGFILE} 2>&1
 
 rm -rf /home/ubuntu/canvas
-git clone git://github.com/asimihsan/canvas.git /home/ubuntu/canvas  >> $${LOGFILE} 2>&1
+git clone git://github.com/asimihsan/canvas.git /home/ubuntu/canvas  >> ${LOGFILE} 2>&1
 cd /home/ubuntu/canvas
 git checkout part3
 sudo chown -R ubuntu:ubuntu /home/ubuntu/canvas
 
-/usr/local/bin/python -u /home/ubuntu/canvas/src/infrastructure/ec2tag_to_environment.py >> $${LOGFILE} 2>&1
+/usr/local/bin/python -u /home/ubuntu/canvas/src/infrastructure/ec2tag_to_environment.py >> ${LOGFILE} 2>&1
 
 """)
 
 # What region to use.
 REGION_NAME = "eu-west-1"
+
+# Load balancer port through which TCP requests are spread across
+# all Riak instances.
+LOAD_BALANCER_RIAK_PORT = 8001
 
 # Regular expression for a datetime string
 re1='.*?'	# Non-greedy match on filler
@@ -148,14 +152,11 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------
     
     # ------------------------------------------------------------------
-    # Launch a new EC2 instance.
+    #   Determine the instance tags we want to set up on the
+    #   EC2 instance.  When ec2tag_to_environment is run these
+    #   tags will get added as system environment variables
+    #   using bash_profile in .ec2tags.
     # ------------------------------------------------------------------
-    logger.info("Launching EC2 instance with AMI ID: '%s'" %  (image_webmachine.id, ))
-    existing_sgs = dict([(sg.name, sg) for sg in conn.get_all_security_groups()])
-    if "webmachine" not in existing_sgs:
-        logger.error("Could not find security group called 'webmachine'")
-        sys.exit(2)        
-    sg_webmachine = [value for (key, value) in existing_sgs.items() if key == u"webmachine"][0]
     
     # Take the total number of Webmachine instances currently around,
     # running or not, and assume they're still using up ports.  Take
@@ -172,19 +173,40 @@ if __name__ == "__main__":
                 taken_webmachine_ports.append(int(instance.tags["WEBMACHINE_PORT"]))
     webmachine_port = max(taken_webmachine_ports) + 1
     logger.debug("Will set WEBMACHINE_PORT tag to: '%s'" % (webmachine_port, ))
-    user_data = USER_DATA.substitute(webmachine_port=webmachine_port)
+    
+    # Find the load balancer's internal IP address, and also
+    # set the port on the load balancer used to spread requests across
+    # all Riak instances.  This is found in
+    # canvas/src/loadbalancer/haproxy.conf.
+    riak_port = LOAD_BALANCER_RIAK_PORT
+    
+    # ------------------------------------------------------------------
+    
+    # ------------------------------------------------------------------
+    # Launch a new EC2 instance.
+    # ------------------------------------------------------------------
+    logger.info("Launching EC2 instance with AMI ID: '%s'" %  (image_webmachine.id, ))
+    existing_sgs = dict([(sg.name, sg) for sg in conn.get_all_security_groups()])
+    if "webmachine" not in existing_sgs:
+        logger.error("Could not find security group called 'webmachine'")
+        sys.exit(2)        
+    sg_webmachine = [value for (key, value) in existing_sgs.items() if key == u"webmachine"][0]
     reservation = image_webmachine.run(key_name=KEY_NAME,
                                        security_groups=[sg_webmachine],
                                        instance_type="t1.micro",
-                                       user_data=user_data)
+                                       user_data=USER_DATA)
     instance = reservation.instances[0]
+    
+    # Add the tags we've already determined to the EC2 instance.    
+    instance.add_tag("WEBMACHINE_PORT", webmachine_port)    
+    instance.add_tag("RIAK_PORT", riak_port)
+    
     while 1:
         time.sleep(3)
         instance.update()
         if instance.state != "pending":
             break
     logger.info("Webmachine instance now running with ID '%s' and public DNS name:\n%s" % (instance.id, instance.public_dns_name, ))    
-    instance.add_tag("WEBMACHINE_PORT", webmachine_port)
-    # ------------------------------------------------------------------    
+    # ------------------------------------------------------------------
 
     logger.info("exiting successfully.")
