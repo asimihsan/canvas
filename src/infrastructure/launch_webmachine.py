@@ -41,28 +41,40 @@ STARTING_WEBMACHINE_PORT = 8000
 USER_DATA = \
 """#!/bin/bash
 
+log()
+{
+    echo `date --rfc-3339=seconds`: "$1"  >> ${LOGFILE}
+}
+
 LOGFILE=/home/ubuntu/output.log
-PYTHON_MODULES="boto httplib2"
+PYTHON_MODULES="boto httplib2 fabric colorama"
 
 . /home/ubuntu/.bash_profile
 cd ~
+
+log "Get easy_install, install Python modules."
 curl -O http://python-distribute.org/distribute_setup.py >> ${LOGFILE} 2>&1
-python distribute_setup.py >> ${LOGFILE} 2>&1
+/usr/local/bin/python distribute_setup.py >> ${LOGFILE} 2>&1
 easy_install -U ${PYTHON_MODULES} >> ${LOGFILE} 2>&1
 rm -f distribute_setup.py
 
+log "Update software."
 sudo apt-get update >> ${LOGFILE} 2>&1
 yes yes | sudo apt-get upgrade  >> ${LOGFILE} 2>&1
 
+log "Check out code from Github."
 rm -rf /home/ubuntu/canvas
 git clone git://github.com/asimihsan/canvas.git /home/ubuntu/canvas  >> ${LOGFILE} 2>&1
 cd /home/ubuntu/canvas
 git checkout part3
+mkdir -p /home/ubuntu/canvas/var
+mkdir -p /home/ubuntu/canvas/log
 sudo chown -R ubuntu:ubuntu /home/ubuntu/canvas
 
+log "Call ec2tag_to_environment."
 /usr/local/bin/python -u /home/ubuntu/canvas/src/infrastructure/ec2tag_to_environment.py >> ${LOGFILE} 2>&1
 
-""")
+"""
 
 # What region to use.
 REGION_NAME = "eu-west-1"

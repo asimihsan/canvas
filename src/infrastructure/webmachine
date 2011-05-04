@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# ----------------------------------------------------------------------
+# Copyright (c) 2011 Asim Ihsan (asim dot ihsan at gmail dot com)
+# Distributed under the MIT/X11 software license, see 
+# http://www.opensource.org/licenses/mit-license.php.
+# ----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
+# /usr/local/bin/webmachine
+#
+# Simple shell script to re-build and launch the Webmachine code.
+# ----------------------------------------------------------------------
+
+log()
+{
+	echo `date --rfc-3339=seconds`: "$1"  >> ${LOG_PATH}
+}
+
+CANVAS_PATH=/home/ubuntu/canvas
+LOG_PATH=${CANVAS_PATH}/log/webmachine_launch.log
+WEBMACHINE_PATH=${CANVAS_PATH}/src/webmachine
+DTACH_SOCKET_DIR=/home/ubuntu/canvas/var
+DTACH_SOCKET=${DTACH_SOCKET_DIR}/webmachine.dtach
+
+log "Calling ${WEBMACHINE_PATH}/make all"
+cd ${WEBMACHINE_PATH}
+make all >> ${LOG_PATH}
+log "Calling ${WEBMACHINE_PATH}/make webstart"
+
+mkdir -p ${DTACH_SOCKET_DIR}
+rm -f ${DTACH_SOCKET}
+bash -c -l "dtach -n ${DTACH_SOCKET} make webstart"
+
