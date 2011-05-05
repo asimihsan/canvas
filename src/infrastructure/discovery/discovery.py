@@ -173,11 +173,14 @@ class DataPage(Resource):
         logger = logging.getLogger("%s.render_GET" % (APP_NAME, ))                    
         logger.debug("entry. request.prepath: %s, request.postpath: %s" % (request.prepath, request.postpath))
         query = request.postpath[0]
-        if query in self.data.AVAILABLE_FUNCTIONS:        
-            function_member = getattr(self.data, query)
-            result = function_member()
-            with self.data_lock:
-                return "<html><body>%s</body></html>" % (result, )
+        with self.data_lock:
+            if query in self.data.AVAILABLE_FUNCTIONS:                    
+                function_member = getattr(self.data, query)
+                result = function_member()
+            else:
+                # TODO error handling
+                result = None
+        return "%s" % (result, )
 
 if __name__ == "__main__":
     root = Resource()
